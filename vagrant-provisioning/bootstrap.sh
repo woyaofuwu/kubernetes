@@ -9,10 +9,27 @@ cat >>/etc/hosts<<EOF
 EOF
 
 # Install docker from Docker-ce repository
-echo "[TASK 2] Install docker container engine"
-yum install -y -q yum-utils device-mapper-persistent-data lvm2 > /dev/null 2>&1
-yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo > /dev/null 2>&1
-yum install -y -q docker-ce >/dev/null 2>&1
+echo "[TASK 2] Install docker container engine > /dev/null 2>&1"
+sudo yum update -y
+yum install -y -q yum-utils device-mapper-persistent-data lvm2 
+# yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo > /dev/null 2>&1
+# yum install -y -q docker-ce >/dev/null 2>&1
+
+# install some tools
+# sudo yum install -y vim telnet bind-utils wget
+sudo yum install -y bash-completion net-tools vim bind-utils
+
+# The centos-extras repository must be enabled. This repository is enabled by default.
+sudo yum-config-manager --enable centos-extras
+
+# Use the following command to set up the stable repository.
+sudo yum-config-manager --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum clean all
+
+# Install the latest version of Docker Engine - Community and containerd
+sudo yum install -y docker-ce docker-ce-cli containerd.io
+# end copy from qhh0205
 
 # Enable docker service
 echo "[TASK 3] Enable and start docker service"
@@ -47,17 +64,16 @@ echo "[TASK 8] Add yum repo file for kubernetes"
 cat >>/etc/yum.repos.d/kubernetes.repo<<EOF
 [kubernetes]
 name=Kubernetes
-baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
-gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
-        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
 EOF
 
 # Install Kubernetes
-echo "[TASK 9] Install Kubernetes (kubeadm, kubelet and kubectl)"
-yum install -y -q kubeadm kubelet kubectl >/dev/null 2>&1
+echo "[TASK 9] Install Kubernetes (kubeadm, kubelet and kubectl)   >/dev/null 2>&1"
+yum install -y -q kubeadm kubelet kubectl 
 
 # Start and Enable kubelet service
 echo "[TASK 10] Enable and start kubelet service"
