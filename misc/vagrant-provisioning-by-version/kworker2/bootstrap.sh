@@ -3,33 +3,15 @@
 # Update hosts file
 echo "[TASK 1] Update /etc/hosts file"
 cat >>/etc/hosts<<EOF
-172.16.16.200 kmaster.example.com kmaster
-172.16.16.201 kworker1.example.com kworker1
-172.16.16.202 kworker2.example.com kworker2
+172.16.16.100 kmaster.example.com kmaster
+172.16.16.101 kworker1.example.com kworker1
+172.16.16.102 kworker2.example.com kworker2
 EOF
 
 # Install docker from Docker-ce repository
-echo "[TASK 2] Install docker container engine > /dev/null 2>&1"
-sudo yum update -y
-yum install -y -q yum-utils device-mapper-persistent-data lvm2 
-# yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo > /dev/null 2>&1
-# yum install -y -q docker-ce >/dev/null 2>&1
-
-# install some tools
-# sudo yum install -y vim telnet bind-utils wget
-sudo yum install -y bash-completion net-tools vim bind-utils
-
-# The centos-extras repository must be enabled. This repository is enabled by default.
-sudo yum-config-manager --enable centos-extras
-
-# Use the following command to set up the stable repository.
-sudo yum-config-manager --add-repo \
-    https://download.docker.com/linux/centos/docker-ce.repo
-sudo yum clean all
-
-# Install the latest version of Docker Engine - Community and containerd
-sudo yum install -y docker-ce docker-ce-cli containerd.io
-# end copy from qhh0205
+echo "[TASK 2] Install docker container engine"
+yum install -y -q yum-utils device-mapper-persistent-data lvm2 > /dev/null 2>&1
+yum install -y -q docker >/dev/null 2>&1
 
 # Enable docker service
 echo "[TASK 3] Enable and start docker service"
@@ -71,14 +53,14 @@ repo_gpgcheck=1
 gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
 EOF
 
-# Install Kubernetes
-echo "[TASK 9] Install Kubernetes (kubeadm, kubelet and kubectl)   >/dev/null 2>&1"
+## Install Kubernetes
+echo "[TASK 9] Install Kubernetes (kubeadm, kubelet and kubectl)  > /dev/null 2>&1"
 yum install -y -q kubeadm kubelet kubectl 
 
-# Start and Enable kubelet service
-echo "[TASK 10] Enable and start kubelet service"
-systemctl enable kubelet >/dev/null 2>&1
-systemctl start kubelet >/dev/null 2>&1
+## Start and Enable kubelet service
+echo "[TASK 10] Enable and start kubelet service  >/dev/null 2>&1"
+systemctl enable kubelet 
+systemctl start kubelet 
 
 # Enable ssh password authentication
 echo "[TASK 11] Enable ssh password authentication"
@@ -86,8 +68,8 @@ sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_
 systemctl reload sshd
 
 # Set Root password
-echo "[TASK 12] Set root password"
-echo "kubeadmin" | passwd --stdin root >/dev/null 2>&1
+echo "[TASK 12] Set root password >/dev/null 2>&1"
+echo "kubeadmin" | passwd --stdin root 
 
 # Update vagrant user's bashrc file
 echo "export TERM=xterm" >> /etc/bashrc

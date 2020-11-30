@@ -70,31 +70,61 @@ EOF
 sysctl --system
 ```
 ##### Install docker engine
+  # 国外 add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+   # 国外 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 ```
 {
-  apt install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-  add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+  apt install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common 
+  curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo apt-key add -
+  add-apt-repository  "deb [arch=amd64] https://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable"
   apt update && apt install -y docker-ce=5:19.03.10~3-0~ubuntu-focal containerd.io
 }
 ```
 ### Kubernetes Setup
-##### Add Apt repository
+
+##### Add Apt repository  https://blog.csdn.net/wangchunfa122/article/details/86529406  2020-11-30
+#curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - 
+#echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
+
+https://blog.csdn.net/qq_37843943/article/details/107245223
+https://blog.csdn.net/u013288190/article/details/109016882
 ```
-{
-  curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-  echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
+{   
+  curl -s https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | apt-key add -
+  echo "deb http://mirrors.ustc.edu.cn/kubernetes/apt kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
 }
 ```
 ##### Install Kubernetes components
 ```
-apt update && apt install -y kubeadm=1.19.2-00 kubelet=1.19.2-00 kubectl=1.19.2-00
+#apt update && apt install -y kubeadm=1.19.4-00 kubelet=1.19.4-00 kubectl=1.19.4-00
+apt-get update && apt-get install -y kubelet kubeadm kubectl
 ```
 ## On any one of the Kubernetes master node (Eg: kmaster1)
 ##### Initialize Kubernetes Cluster
 ```
-kubeadm init --control-plane-endpoint="172.16.16.100:6443" --upload-certs --apiserver-advertise-address=172.16.16.101 --pod-network-cidr=192.168.0.0/16
+# kubeadm init --control-plane-endpoint="172.16.16.100:6443" --upload-certs --apiserver-advertise-address=172.16.16.101 --pod-network-cidr=192.168.0.0/16
 ```
+kubeadm init --image-repository registry.aliyuncs.com/google_containers --control-plane-endpoint="172.16.16.100:6443" --upload-certs --apiserver-advertise-address=172.16.16.101 --pod-network-cidr=192.168.0.0/16
+
+kubeadm init --image-repository registry.aliyuncs.com/google_containers --control-plane-endpoint="172.16.16.100:6443" --upload-certs --apiserver-advertise-address=172.16.16.101 --pod-network-cidr=192.168.0.0/16
+
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-controller-manager:v1.18.12
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler:v1.18.12
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-proxy:v1.18.12
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.2
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/etcd:3.4.3-0
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/coredns:1.6.7
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-apiserver:v1.18.12
+
+
+docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-controller-manager:v1.18.12 k8s.gcr.io/kube-controller-manager:v1.18.12
+docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler:v1.18.12 k8s.gcr.io/kube-scheduler:v1.18.12
+docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-proxy:v1.18.12 k8s.gcr.io/kube-proxy:v1.18.12
+docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.2 k8s.gcr.io/pause:3.2
+docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/etcd:3.4.3-0 k8s.gcr.io/etcd:3.4.3-0
+docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/coredns:1.6.7 k8s.gcr.io/coredns:1.6.7
+docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-apiserver:v1.18.12 k8s.gcr.io/kube-apiserver:v1.18.12
+
 Copy the commands to join other master nodes and worker nodes.
 ##### Deploy Calico network
 ```

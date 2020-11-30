@@ -11,9 +11,7 @@ EOF
 
 # Install docker from Docker-ce repository  >/dev/null 2>&1
 echo "[TASK 2] Install docker container engine"
-rpm --import /etc/pki/rpm-gpg/RPM*
-rpm -e docker-ce-19.03.13-3.el7.x86_64
-rpm -e docker-ce-cli-19.03.13-3.el7.x86_64
+
 sudo yum remove docker  docker-common docker-selinux docker-engine
 
 yum install -y -q yum-utils device-mapper-persistent-data lvm2 
