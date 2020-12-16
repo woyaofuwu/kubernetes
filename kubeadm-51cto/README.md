@@ -14,13 +14,14 @@ Node1（192.168.1.11）配置：
 
 操作系统：centos7.4、centos7.5、centos7.6以及更高版本都可以
 配置：4核cpu，6G内存，两块60G硬盘
-网络：桥接网络
+网络：桥接网络 （#更换NAT 网络 ,刷新mac地址）
 
 Node2（192.168.1.12）配置：
 
 操作系统：centos7.4、centos7.5、centos7.6以及更高版本都可以
 配置：4核cpu，6G内存，两块60G硬盘
 网络：桥接网络
+#更换NAT 网络 ,刷新mac地址
 二、初始化实验环境
 设置主机名
 hostnamectl set-hostname k8s-master
@@ -32,32 +33,19 @@ vi /etc/hosts
 192.168.1.11 k8s-node1
 192.168.1.12 k8s-node2
 
-
-
-
-
-
-
-
-
 2.安装基础软件包，各个节点操作
 
 yum install -y conntrack ntpdate ntp ipvsadm ipset jq iptables curl sysstat libseccomp wget vim net-tools git ntpdate
 
-
 3.关闭firewalld防火墙，各个节点操作，centos7系统默认使用的是firewalld防火墙，停止firewalld防火墙，并禁用这个服务
 
 systemctl  stop firewalld  && systemctl  disable  firewalld
-
-
 
 swapoff -a && sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 setenforce 0 && sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
 
 
 5.时间同步，各个节点操作
-
-
 5.1 时间同步
 
 ntpdate cn.pool.ntp.org
@@ -66,10 +54,6 @@ ntpdate cn.pool.ntp.org
 
 crontab -e
 * */1 * * * /usr/sbin/ntpdate   cn.pool.ntp.org
-
-
-
-
 
 8.	修改内核参数，各个节点操作
  调整内核参数，对于K8S
@@ -151,10 +135,11 @@ sudo yum install -y kubelet-1.18.0 kubeadm-1.18.0 kubectl-1.18.0
 sudo systemctl restart kubelet
 sudo systemctl enable kubelet
 
-
+ sudo yum install -y epel-release
+ sudo yum install -y git ansible sshpass python-netaddr openssl-devel
+ yes "/root/.ssh/id_rsa" | sudo ssh-keygen -t rsa -N ""
 
 设置集群主节点配置--master
-
 [root@master keepalived]# cat kubeadm-config.yaml 
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
@@ -167,25 +152,36 @@ networking:
   dnsDomain: "cluster.local"
 如下命令进行初始化：
  kubeadm init --config=kubeadm-config.yaml --upload-certs
+#实际使用以下：
+kubeadm init --image-repository registry.aliyuncs.com/google_containers --apiserver-advertise-address=192.168.1.10 --service-cidr="10.1.0.0/16" --pod-network-cidr=10.100.0.1/16 --kubernetes-version 1.18.0 >> /root/kubeinit.log 
 
+卸载node
+k8s-master run: kubectl delete node k8s-node2
+k8s-node2 run :
+ kubeadm reset
+ rm -rf /var/lib/cni/
+ rm -rf /var/lib/etcd/*
 
 •	拷贝一下这里打印出来的两条kubeadm join命令，后面添加其他master节点以及worker节点时需要用到
 
 
 #配置环境变量
 mkdir -p $HOME/.kube
-
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
 安装calico网络 --master节点
 kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 
 5、查看节点情况
 kubectl get node -o wide
+
+
 6、子节点加入
-kubeadm join 192.168.183.10:6443 --token abcdef.0123456789abcdef \
-    --discovery-token-ca-cert-hash sha256:f2a9b77cbe8bdaa9dd8cdcd414fb4a9d09059dfb33ced7f13fc2218f425b6273
+
+kubeadm join 192.168.1.10:6443 --token 1pv3r9.0x9en8945kqjhed4 \
+    --discovery-token-ca-cert-hash sha256:0d9c29195a523dba8e32b2649b0b14c21e778b48044111c540f8ec596a1f0220
+    
 注意token是master节点初始化时，生产的。如果忘记了。执行以下操作
 kubeadm token create --print-join-command
 

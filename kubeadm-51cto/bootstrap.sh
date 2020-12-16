@@ -1,13 +1,18 @@
 #!/bin/bash
 echo "[TASK 1] install tools"
+
+cat >>/etc/hosts<<EOF
+192.168.1.10 k8s-master
+192.168.1.11 k8s-node1
+192.168.1.12 k8s-node2
+EOF
 yum install -y conntrack ntpdate ntp ipvsadm ipset jq iptables curl sysstat libseccomp wget vim net-tools git ntpdate
 
 echo "[TASK 2] Set swapoff setenforce "
 swapoff -a && sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 setenforce 0 && sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
 
-crontab -e
-* */1 * * * /usr/sbin/ntpdate   cn.pool.ntp.org
+crontab -e * */1 * * * /usr/sbin/ntpdate   cn.pool.ntp.org
 
 echo "[TASK 2] 调整内核参数，对K8S优化"
 cat > /etc/sysctl.d/kubernetes.conf << EOF
@@ -33,7 +38,7 @@ echo "[TASK 3] CentOS 7.x 系统自带的 3.10.x 内核存在一些 Bugs，导�
 rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-3.el7.elrepo.noarch.rpm #安装完成后检查 /boot/grub2/grub.cfg 中对应内核 menuentry 中是否包含 initrd16 配置，如果没有，再安装一次!
 yum --enablerepo=elrepo-kernel install -y kernel-lt #设置开机从新内核启动
 grub2-set-default "CentOS Linux (4.4.182-1.el7.elrepo.x86_64) 7 (Core)" # 重启
-reboot # 查看内核变化啦
+#reboot # 查看内核变化啦
 
 echo "[TASK 4] 安装docker"
 yum install wget
@@ -74,7 +79,9 @@ EOF
 # 安装kubeadm, kubectl, and kubelet.
 sudo yum install -y kubelet-1.18.0 kubeadm-1.18.0 kubectl-1.18.0
 sudo systemctl restart kubelet
+sudo systemctl enable kubelet
 
+# journalctl -xefu kubelet 
 # Enable ssh password authentication
 echo "[TASK 6] Enable ssh password authentication"
 sed -i 's/^PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config
@@ -82,5 +89,5 @@ echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
 systemctl reload sshd
 
 # Set Root password
-echo "[TASK 7] Set root password"
-echo -e "kubeadmin\nkubeadmin" | passwd root >/dev/null 2>&1
+#echo "[TASK 7] Set root password"
+#echo -e "kubeadmin\nkubeadmin" | passwd root >/dev/null 2>&1
